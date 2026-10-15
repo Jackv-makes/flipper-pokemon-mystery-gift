@@ -10,7 +10,7 @@ This is a fork of
 app are his; see [Credits](#credits). This fork moves the IR pins to a compact
 "IR mini" add-on board and finishes the items his README listed as ideas:
 decoration gifts, showing the partner data the cart sends back, and
-capture-and-replay. It also adds a random-gift mode and reorganises the menus.
+capture-and-replay. It also adds a random-gift mode and reorganizes the menus.
 
 > **Status of upstream:** Nox verified the full two-pass exchange against a real
 > French Pokémon Crystal cartridge on 2026-07-19 (gift delivered and accepted,

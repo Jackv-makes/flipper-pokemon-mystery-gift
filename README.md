@@ -113,3 +113,28 @@ This project stands entirely on the shoulders of prior reverse-engineering work:
 
 GPL-3.0-or-later. See [LICENSE](LICENSE). Portions of the receive logic are
 derived from the community reference implementation cited above.
+
+---
+
+## IR mini fork (Jack / Claude, 2026-10-15)
+
+This copy targets the **IR mini** board in `../hardware-mini` and adds three
+things the upstream README listed as ideas:
+
+- **Hardware:** TX on pin 13 (PB6), RX on pin 14 (PB7), 3.3 V from pin 9, no
+  OTG. The app takes USART1 from the expansion-module service while it runs
+  (`gbc_ir_hal.c`).
+- **Decoration gifts:** the Send Gift screen has a *Gift* row (Item or
+  Decoration) and a *Decoration* picker over the game's 37-entry
+  `MysteryGiftDecos` table. A decoration the cart already owns falls back to
+  the selected item, as in the game.
+- **Partner data:** after a successful exchange the log shows what the cart
+  sent back: trainer name, ID, Pokédex count, the gift it offered, and its
+  party as level + species (`mg_species.c`, 251 names from pokecrystal).
+- **Capture and replay:** those partner payloads are saved to
+  `apps_data/pokemon_mystery_gift/capture.bin` and *Send Captured* transmits
+  them again, byte for byte (with the "friend ready" flag and daily counter
+  cleared), so another game receives exactly the trainer and gift that cart
+  offered. The capture survives restarts.
+
+Untested on hardware as of this writing; the boards are not built yet.

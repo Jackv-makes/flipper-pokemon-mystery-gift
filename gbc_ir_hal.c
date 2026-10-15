@@ -8,6 +8,8 @@
 #include <furi_hal.h>
 #include <furi_hal_power.h>
 #include <furi_hal_cortex.h>
+#include <furi_hal_serial_control.h>
+#include <expansion/expansion.h>
 
 // The Flipper's STM32WB55 core runs at 64 MHz; DWT->CYCCNT counts CPU cycles.
 #define GBC_CPU_MHZ 64u
@@ -15,6 +17,10 @@
 static GbcIrConfig g_cfg;
 static bool g_inited = false;
 static bool g_otg_was_on = false;
+// Pins 13/14 are USART1; the expansion-module service owns them until we
+// take the USART for ourselves (IR mini board).
+static Expansion* g_expansion = NULL;
+static FuriHalSerialHandle* g_serial = NULL;
 
 // -------------------------------------------------------------------------
 // Cycle-counter helpers (DWT is already running; furi uses it for delays).
@@ -55,15 +61,18 @@ bool gbc_ir_rx_is_mark(void) {
 // -------------------------------------------------------------------------
 GbcIrConfig gbc_ir_config_default(void) {
     GbcIrConfig cfg = {
-        .tx_pin = &gpio_ext_pa7, // header pin 2 (also TIM1/16/17 CH -- future HW PWM)
-        .rx_pin = &gpio_ext_pc0, // header pin 16 (clean dedicated input, no key/subsystem)
+        // IR mini board (mystery-gift/hardware-mini): TX on pin 13 (PB6), RX on
+        // pin 14 (PB7). Nox's original protoboard used pin 2 (PA7) and pin 16 (PC0).
+        .tx_pin = &gpio_usart_tx, // header pin 13
+        .rx_pin = &gpio_usart_rx, // header pin 14
         .tx_active_high = true, // low-side NPN driver: HIGH => LED on
         .rx_active_low = true, // inverting open-collector buffer
         // The built board (protoboard Rev L) runs the receiver from the 5 V rail
         // on header pin 1, so OTG must be on or the receiver is unpowered when
         // the Flipper runs on battery. (On USB power, VBUS feeds pin 1 anyway,
         // which can mask this if the flag is wrong.)
-        .enable_otg_5v = true,
+        // The IR mini board runs from the 3.3 V on pin 9; no 5 V needed.
+        .enable_otg_5v = false,
     };
     return cfg;
 }
@@ -71,6 +80,18 @@ GbcIrConfig gbc_ir_config_default(void) {
 void gbc_ir_init(const GbcIrConfig* cfg) {
     furi_check(cfg);
     g_cfg = *cfg;
+
+    // Claim USART1 so the expansion-module service lets go of pins 13/14.
+    if(!g_serial) {
+        g_expansion = furi_record_open(RECORD_EXPANSION);
+        expansion_disable(g_expansion);
+        g_serial = furi_hal_serial_control_acquire(FuriHalSerialIdUsart);
+        if(!g_serial) {
+            expansion_enable(g_expansion);
+            furi_record_close(RECORD_EXPANSION);
+            g_expansion = NULL;
+        }
+    }
 
     if(g_cfg.enable_otg_5v) {
         g_otg_was_on = furi_hal_power_is_otg_enabled();
@@ -106,6 +127,15 @@ void gbc_ir_deinit(void) {
 
     if(g_cfg.enable_otg_5v && !g_otg_was_on) {
         furi_hal_power_disable_otg();
+    }
+    if(g_serial) {
+        furi_hal_serial_control_release(g_serial);
+        g_serial = NULL;
+    }
+    if(g_expansion) {
+        expansion_enable(g_expansion);
+        furi_record_close(RECORD_EXPANSION);
+        g_expansion = NULL;
     }
     g_inited = false;
 }

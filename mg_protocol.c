@@ -5,6 +5,7 @@
 #include "mg_timing.h"
 
 #include <furi.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -577,7 +578,12 @@ static MgResult mg_recv_one_payload(
     return MgOk;
 }
 
-static MgResult mg_sender_one_pass(const MgProtocol* p, const uint8_t* payload, uint8_t len) {
+static MgResult mg_sender_one_pass(
+    const MgProtocol* p,
+    const uint8_t* payload,
+    uint8_t len,
+    uint8_t* capture,
+    uint8_t* capture_len) {
     uint8_t partner[MG_MAX_MSG];
     uint8_t partner_len = 0;
     uint8_t region = p->region_code; // fallback if capture fails
@@ -585,6 +591,11 @@ static MgResult mg_sender_one_pass(const MgProtocol* p, const uint8_t* payload, 
     MG_TRY(mg_send_one_payload(p, payload, len, &region));
     MG_TRY(mg_begin_receiving(p));
     MG_TRY(mg_recv_one_payload(p, partner, sizeof(partner), &partner_len, region));
+    if(capture && capture_len) {
+        uint8_t n = partner_len < MG_CAPTURE_CAP ? partner_len : MG_CAPTURE_CAP;
+        memcpy(capture, partner, n);
+        *capture_len = n;
+    }
     // The hello + empty-block tail closes every pass ("finish" in reference).
     mg_trace(TrStep, ST_TAIL, 0, 0);
     MG_TRY(mg_begin_sending(p));
@@ -625,7 +636,7 @@ MgResult mg_sender_send_gift(
 
     mg_logf(p, "pass 1 (%u B)", len1);
     mg_trace(TrStep, ST_PASS1, len1, 0);
-    MG_TRY(mg_sender_one_pass(p, payload1, len1));
+    MG_TRY(mg_sender_one_pass(p, payload1, len1, p->partner1, p->partner1_len));
 
     if(len2 > 0) {
         // Reference: 2 ms + the hello's own 3 ms lead = 5 ms between passes.
@@ -633,7 +644,7 @@ MgResult mg_sender_send_gift(
         mg_logf(p, "pass 2 (%u B)", len2);
         mg_trace(TrStep, ST_PASS2, len2, 0);
         MG_TRY(mg_begin_sending_ex(p, 1));
-        MG_TRY(mg_sender_one_pass(p, payload2, len2));
+        MG_TRY(mg_sender_one_pass(p, payload2, len2, p->partner2, p->partner2_len));
     }
 
     mg_logf(p, "done: OK");

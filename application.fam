@@ -6,13 +6,14 @@ App(
     stack_size=4 * 1024,
     fap_category="GPIO",
     fap_author="Nicolas Aubry",
-    fap_version="0.1",
-    fap_description="Send a Pokemon Gen II (Gold/Silver/Crystal) Mystery Gift to a real cartridge over IR, using an external IR front end on the GPIO header.",
+    fap_version="0.2",
+    fap_description="Send a Pokemon Gen II (Gold/Silver/Crystal) Mystery Gift (item or decoration) to a real cartridge over IR with the IR mini board on GPIO pins 9-14; shows and can replay the partner data the cart sends back.",
     # fap_icon="icon.png",  # add a 10x10 1-bit PNG later if you want a launcher icon
     sources=[
         "pokemon_mystery_gift.c",
         "gbc_ir_hal.c",
         "mg_protocol.c",
         "mg_gift.c",
+        "mg_species.c",
     ],
 )

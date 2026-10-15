@@ -182,7 +182,7 @@ turn stands on prior reverse-engineering work:
   — framing of the problem and why the Flipper's onboard IR can't do it.
 
 Fork changes (IR mini pins, decorations, partner display, capture/replay,
-random gifts, menu layout) by Jack, written with Claude, 2026-10.
+random gifts, menu layout) by Jack.
 
 ## License
 

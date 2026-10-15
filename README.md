@@ -6,7 +6,7 @@ the GPIO header.
 
 This is a fork of
 **[TheRealNox/flipper-pokemon-mystery-gift](https://github.com/TheRealNox/flipper-pokemon-mystery-gift)**
-by Nicolas Aubry. The protocol work, the receiver port, the HAL and the original
+. The protocol work, the receiver port, the HAL and the original
 app are his; see [Credits](#credits). This fork moves the IR pins to a compact
 "IR mini" add-on board and finishes the items his README listed as ideas:
 decoration gifts, showing the partner data the cart sends back, and
